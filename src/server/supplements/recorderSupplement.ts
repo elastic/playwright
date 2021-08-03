@@ -66,7 +66,8 @@ export class RecorderSupplement implements InstrumentationListener {
     let recorderPromise = (context as any)[symbol] as Promise<RecorderSupplement>;
     if (!recorderPromise) {
       const recorder = new RecorderSupplement(context, params);
-      recorderPromise = recorder.install().then(() => recorder);
+      recorderPromise = recorder.install(Boolean(params.showRecorder)).then(() => recorder);
+
       (context as any)[symbol] = recorderPromise;
     }
     return recorderPromise;
@@ -96,7 +97,7 @@ export class RecorderSupplement implements InstrumentationListener {
     const orderedLanguages = [primaryLanguage, ...languages];
 
     this._recorderSources = [];
-    const generator = new CodeGenerator(context._browser.options.name, !!params.startRecording, params.launchOptions || {}, params.contextOptions || {}, params.device, params.saveStorage);
+    const generator = new CodeGenerator(context._browser.options.name, !!params.startRecording, params.launchOptions || {}, params.contextOptions || {}, params.device, params.saveStorage, params.actionListener);
     let text = '';
     generator.on('change', () => {
       this._recorderSources = [];
@@ -128,7 +129,7 @@ export class RecorderSupplement implements InstrumentationListener {
     this._generator = generator;
   }
 
-  async install() {
+  async installRecorder() {
     const recorderApp = await RecorderApp.open(this._context);
     this._recorderApp = recorderApp;
     recorderApp.once('close', () => {
@@ -170,6 +171,13 @@ export class RecorderSupplement implements InstrumentationListener {
       this._pushAllSources()
     ]);
 
+    (this._context as any).recorderAppForTest = this._recorderApp;
+  }
+
+  async install(showRecorder: Boolean) {
+    if (showRecorder)
+      await this.installRecorder();
+
     this._context.on(BrowserContext.Events.Page, page => this._onPage(page));
     for (const page of this._context.pages())
       this._onPage(page);
@@ -178,7 +186,7 @@ export class RecorderSupplement implements InstrumentationListener {
       for (const timer of this._timers)
         clearTimeout(timer);
       this._timers.clear();
-      recorderApp.close().catch(() => {});
+      this._recorderApp?.close().catch(() => {});
     });
 
     // Input actions that potentially lead to navigation are intercepted on the page and are
@@ -223,8 +231,6 @@ export class RecorderSupplement implements InstrumentationListener {
     if (this._debugger.isPaused())
       this._pausedStateChanged();
     this._debugger.on(Debugger.Events.PausedStateChanged, () => this._pausedStateChanged());
-
-    (this._context as any).recorderAppForTest = recorderApp;
   }
 
   _pausedStateChanged() {

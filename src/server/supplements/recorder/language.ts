@@ -14,6 +14,7 @@
  * limitations under the License.
  */
 
+import { EventEmitter } from 'stream';
 import type { BrowserContextOptions, LaunchOptions } from '../../../..';
 import { ActionInContext } from './codeGenerator';
 import { Action, DialogSignal, DownloadSignal, NavigationSignal, PopupSignal } from './recorderActions';
@@ -25,6 +26,7 @@ export type LanguageGeneratorOptions = {
   contextOptions: BrowserContextOptions;
   deviceName?: string;
   saveStorage?: string;
+  actionListener?: EventEmitter;
 };
 
 export interface LanguageGenerator {

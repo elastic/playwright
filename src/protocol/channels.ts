@@ -1011,6 +1011,8 @@ export type BrowserContextRecorderSupplementEnableParams = {
   device?: string,
   saveStorage?: string,
   outputFile?: string,
+  showRecorder?: boolean;
+  actionListener?: EventEmitter;
 };
 export type BrowserContextRecorderSupplementEnableOptions = {
   language?: string,
@@ -3738,30 +3740,4 @@ export const commandsWithTracingSnapshots = new Set([
   'ElementHandle.uncheck',
   'ElementHandle.waitForElementState',
   'ElementHandle.waitForSelector'
-]);
-
-export const pausesBeforeInputActions = new Set([
-  'Frame.check',
-  'Frame.click',
-  'Frame.dragAndDrop',
-  'Frame.dblclick',
-  'Frame.fill',
-  'Frame.hover',
-  'Frame.press',
-  'Frame.selectOption',
-  'Frame.setInputFiles',
-  'Frame.tap',
-  'Frame.type',
-  'Frame.uncheck',
-  'ElementHandle.check',
-  'ElementHandle.click',
-  'ElementHandle.dblclick',
-  'ElementHandle.fill',
-  'ElementHandle.hover',
-  'ElementHandle.press',
-  'ElementHandle.selectOption',
-  'ElementHandle.setInputFiles',
-  'ElementHandle.tap',
-  'ElementHandle.type',
-  'ElementHandle.uncheck'
 ]);
