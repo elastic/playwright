@@ -10,7 +10,7 @@ node_modules/
 .idea
 yarn.lock
 /src/generated/*
-lib/
+# lib/
 drivers/
 .android-sdk/
 .gradle/
