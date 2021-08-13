@@ -84,7 +84,6 @@ export class CodeGenerator extends EventEmitter {
       return;
     const { action, pageAlias } = actionInContext;
     let eraseLastAction = false;
-    this._options.actionListener?.emit('action', actionInContext);
     if (this._lastAction && this._lastAction.pageAlias === pageAlias) {
       const { action: lastAction } = this._lastAction;
       // We augment last action based on the type.
@@ -116,6 +115,7 @@ export class CodeGenerator extends EventEmitter {
       this._actions.pop();
     this._actions.push(actionInContext);
     this.emit('change');
+    this._options.actionListener?.emit('actions', this._actions);
   }
 
   commitLastAction() {
@@ -148,6 +148,7 @@ export class CodeGenerator extends EventEmitter {
       signal.isAsync = true;
       this._lastAction.action.signals.push(signal);
       this.emit('change');
+      this._options.actionListener?.emit('actions', this._actions);
       return;
     }
 
