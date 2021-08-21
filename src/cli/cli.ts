@@ -475,6 +475,7 @@ async function codegen(options: Options, url: string | undefined, language: stri
     device: options.device,
     saveStorage: options.saveStorage,
     startRecording: true,
+    showRecorder: true,
     outputFile: outputFile ? path.resolve(outputFile) : undefined
   });
   await openPage(context, url);

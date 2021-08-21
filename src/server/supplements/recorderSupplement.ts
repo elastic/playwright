@@ -216,9 +216,13 @@ export class RecorderSupplement implements InstrumentationListener {
     });
 
     await this._context.exposeBinding('_playwrightRecorderSetSelector', false, async (_, selector: string) => {
-      this._setMode('none');
+      this._params.actionListener?.emit('selector', selector);
       await this._recorderApp?.setSelector(selector, true);
       await this._recorderApp?.bringToFront();
+    });
+    // added for synthetics
+    await this._context.exposeBinding('_playwrightSetMode', false, async  (_, mode: Mode) => {
+      this._setMode(mode);
     });
 
     await this._context.exposeBinding('_playwrightResume', false, () => {
