@@ -162,6 +162,10 @@ export class ContextRecorder extends EventEmitter {
     eventsHelper.removeEventListeners(this._listeners);
   }
 
+  emitSelector(selector: string) {
+    this._params.actionListener?.emit('selector', selector);
+  }
+
   private async _onPage(page: Page) {
     // First page is called page, others are called popup1, popup2, etc.
     const frame = page.mainFrame();
