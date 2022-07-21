@@ -30,6 +30,7 @@ import { eventsHelper, monotonicTime } from './../utils';
 import { Frame } from './frames';
 import { Page } from './page';
 import { performAction } from './recorder/recorderRunner';
+import { languageSet } from './codegen/languages';
 
 import type { Language } from './codegen/types';
 import type { CallMetadata, InstrumentationListener, SdkObject } from './instrumentation';
@@ -37,8 +38,9 @@ import type { Point } from '../utils/isomorphic/types';
 import type { AriaTemplateNode } from '@isomorphic/ariaSnapshot';
 import type * as channels from '@protocol/channels';
 import type * as actions from '@recorder/actions';
-import type { CallLog, CallLogStatus, ElementInfo, Mode, OverlayState, Source, UIState } from '@recorder/recorderTypes';
+import type { CallLog, CallLogStatus, ElementInfo, EventData, Mode, OverlayState, Source, UIState } from '@recorder/recorderTypes';
 import type { RegisteredListener } from '../utils';
+import type { IRecorder, IRecorderApp, IRecorderAppFactory } from './recorder/recorderFrontend';
 
 const recorderSymbol = Symbol('recorderSymbol');
 
@@ -68,7 +70,7 @@ export type RecorderEventMap = {
   [RecorderEvent.ContextClosed]: [];
 };
 
-export class Recorder extends EventEmitter<RecorderEventMap> implements InstrumentationListener {
+export class Recorder extends EventEmitter<RecorderEventMap> implements InstrumentationListener, IRecorder {
   readonly handleSIGINT: boolean | undefined;
   private _context: BrowserContext;
   private _params: channels.BrowserContextEnableRecorderParams;
@@ -84,12 +86,14 @@ export class Recorder extends EventEmitter<RecorderEventMap> implements Instrume
 
   private _signalProcessor: RecorderSignalProcessor;
   private _pageAliases = new Map<Page, string>();
+  private _actions: actions.ActionInContext[] = [];
   private _lastPopupOrdinal = 0;
   private _lastDialogOrdinal = -1;
   private _lastDownloadOrdinal = -1;
   private _listeners: RegisteredListener[] = [];
   private _enabled: boolean = false;
   private _callLogs: CallLog[] = [];
+  private _recorderApp: IRecorderApp | null = null;
 
   static forContext(context: BrowserContext, params: channels.BrowserContextEnableRecorderParams): Promise<Recorder> {
     let recorderPromise = (context as any)[recorderSymbol] as Promise<Recorder>;
@@ -104,9 +108,43 @@ export class Recorder extends EventEmitter<RecorderEventMap> implements Instrume
     return (context as any)[recorderSymbol] as Recorder;
   }
 
-  private static async _create(context: BrowserContext, params: channels.BrowserContextEnableRecorderParams = {}): Promise<Recorder> {
-    const recorder = new Recorder(context, params);
-    await recorder._install();
+  static async showInspector(context: BrowserContext, params: channels.BrowserContextEnableRecorderParams, recorderAppFactory: IRecorderAppFactory): Promise<Recorder> {
+    if (isUnderTest())
+      params.language = process.env.TEST_INSPECTOR_LANGUAGE;
+    return await Recorder.show(context, recorderAppFactory, params);
+  }
+
+  static showInspectorNoReply(context: BrowserContext, recorderAppFactory: IRecorderAppFactory): void {
+    Recorder.showInspector(context, {}, recorderAppFactory).catch(() => {});
+  }
+
+  static show(context: BrowserContext, recorderAppFactory: IRecorderAppFactory, params: channels.BrowserContextEnableRecorderParams): Promise<Recorder> {
+    let recorderPromise = (context as any)[recorderSymbol] as Promise<Recorder>;
+    if (!recorderPromise) {
+      recorderPromise = Recorder._create(context, recorderAppFactory, params);
+      (context as any)[recorderSymbol] = recorderPromise;
+    }
+    return recorderPromise;
+  }
+
+  private static async _create(context: BrowserContext, recorderAppFactoryOrParams: IRecorderAppFactory | channels.BrowserContextEnableRecorderParams, params?: channels.BrowserContextEnableRecorderParams): Promise<Recorder> {
+    let recorderAppFactory: IRecorderAppFactory | undefined;
+    let actualParams: channels.BrowserContextEnableRecorderParams;
+
+    if (typeof recorderAppFactoryOrParams === 'function') {
+      recorderAppFactory = recorderAppFactoryOrParams;
+      actualParams = params || {};
+    } else {
+      actualParams = recorderAppFactoryOrParams;
+    }
+
+    const recorder = new Recorder(context, actualParams);
+    if (recorderAppFactory) {
+      const recorderApp = await recorderAppFactory(recorder);
+      await recorder._install(recorderApp, Boolean(actualParams.showRecorder));
+    } else {
+      await recorder._install();
+    }
     return recorder;
   }
 
@@ -120,8 +158,11 @@ export class Recorder extends EventEmitter<RecorderEventMap> implements Instrume
 
     this._signalProcessor = new RecorderSignalProcessor({
       addAction: (actionInContext: actions.ActionInContext) => {
-        if (this._enabled)
+        if (this._enabled) {
+          this._actions.push(actionInContext);
           this.emit(RecorderEvent.ActionAdded, actionInContext);
+          this._params.actionListener?.emit('actions', this._actions);
+        }
       },
       addSignal: (signal: actions.SignalInContext) => {
         if (this._enabled)
@@ -148,9 +189,64 @@ export class Recorder extends EventEmitter<RecorderEventMap> implements Instrume
     }
   }
 
-  private async _install() {
+  private async installRecorder(recorderApp: IRecorderApp) {
+    this._recorderApp = recorderApp;
+    recorderApp.once('close', () => {
+      this._debugger.resume(false);
+      this._recorderApp = null;
+    });
+    recorderApp.on('event', (data: EventData) => {
+      if (data.event === 'setMode') {
+        this.setMode(data.params.mode);
+        return;
+      }
+      if (data.event === 'highlightRequested') {
+        if (data.params.selector)
+          this.setHighlightedSelector(data.params.selector);
+        if (data.params.ariaTemplate)
+          this.setHighlightedAriaTemplate(data.params.ariaTemplate);
+        return;
+      }
+      if (data.event === 'step') {
+        this._debugger.resume(true);
+        return;
+      }
+      if (data.event === 'languageChanged') {
+        if (data.params.file) {
+          this._currentLanguage = this.languageName(data.params.file);
+          this._refreshOverlay();
+        }
+        return;
+      }
+      if (data.event === 'resume') {
+        this._debugger.resume(false);
+        return;
+      }
+      if (data.event === 'pause') {
+        this._debugger.pauseOnNextStatement();
+        return;
+      }
+      if (data.event === 'clear') {
+        this.clearScript();
+        return;
+      }
+    });
+
+    await Promise.all([
+      recorderApp.setMode(this._mode),
+      recorderApp.setPaused(this._debugger.isPaused()),
+      this._pushAllSources().catch(() => {})
+    ]);
+
+    (this._context as any).recorderAppForTest = this._recorderApp;
+  }
+
+  async _install(recorderApp?: IRecorderApp, showRecorder?: boolean) {
     this.emit(RecorderEvent.ModeChanged, this._mode);
     this.emit(RecorderEvent.PausedStateChanged, this._debugger.isPaused());
+
+    if (recorderApp && showRecorder)
+      await this.installRecorder(recorderApp);
 
     this._context.once(BrowserContext.Events.Close, () => {
       eventsHelper.removeEventListeners(this._listeners);
@@ -187,7 +283,10 @@ export class Recorder extends EventEmitter<RecorderEventMap> implements Instrume
 
       await this._context.exposeBinding(progress, '__pw_recorderElementPicked', false, async ({ frame }, elementInfo: ElementInfo) => {
         const selectorChain = await generateFrameSelector(frame);
-        this.emit(RecorderEvent.ElementPicked, { selector: buildFullSelector(selectorChain, elementInfo.selector), ariaSnapshot: elementInfo.ariaSnapshot }, true);
+        const selector = buildFullSelector(selectorChain, elementInfo.selector);
+        this.emit(RecorderEvent.ElementPicked, { selector, ariaSnapshot: elementInfo.ariaSnapshot }, true);
+        await this._recorderApp?.elementPicked({ selector, ariaSnapshot: elementInfo.ariaSnapshot }, true);
+        this.emitSelector(selector);
       });
 
       await this._context.exposeBinding(progress, '__pw_recorderSetMode', false, async ({ frame }, mode: Mode) => {
@@ -204,6 +303,11 @@ export class Recorder extends EventEmitter<RecorderEventMap> implements Instrume
 
       await this._context.exposeBinding(progress, '__pw_resume', false, () => {
         this._debugger.resume(false);
+      });
+
+      // added for synthetics
+      await this._context.exposeBinding(progress, '__pw_setMode', false, async (_source: BindingSource, mode: Mode) => {
+        this.setMode(mode);
       });
 
       this._context.on(BrowserContext.Events.Page, (page: Page) => this._onPage(page));
@@ -282,6 +386,35 @@ export class Recorder extends EventEmitter<RecorderEventMap> implements Instrume
   setLanguage(language: Language) {
     this._currentLanguage = language;
     this._refreshOverlay();
+  }
+
+  languageName(id?: string): Language {
+    if (!id)
+      return this._currentLanguage;
+    const languages = languageSet();
+    for (const lang of languages) {
+      if (lang.id === id)
+        return lang.highlighter;
+    }
+    return this._currentLanguage;
+  }
+
+  clearScript(): void {
+    this.clear();
+  }
+
+  runTask(task: string): void {
+    // TODO: implement
+  }
+
+  emitSelector(selector: string): void {
+    this._params.actionListener?.emit('selector', selector);
+  }
+
+  private _pushAllSources(): Promise<void> {
+    // Sources are handled via RecorderEvent.UserSourcesChanged event
+    // This is a stub for compatibility with the factory pattern
+    return Promise.resolve();
   }
 
   resume() {
@@ -492,6 +625,8 @@ export class Recorder extends EventEmitter<RecorderEventMap> implements Instrume
   }
 
   clear(): void {
+    this._actions = [];
+    this._params.actionListener?.emit('actions', this._actions);
     if (this._params.mode === 'recording') {
       for (const page of this._context.pages())
         this._onFrameNavigated(page.mainFrame(), page);
