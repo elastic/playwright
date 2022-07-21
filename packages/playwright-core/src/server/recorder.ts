@@ -66,7 +66,7 @@ export class Recorder implements InstrumentationListener {
   private static async _create(context: BrowserContext, recorderAppFactory: RecorderAppFactory, params: channels.BrowserContextRecorderSupplementEnableParams = {}): Promise<Recorder> {
     const recorder = new Recorder(context, params);
     const recorderApp = await recorderAppFactory(recorder);
-    await recorder._install(recorderApp);
+    await recorder.install(Boolean(params.showRecorder), recorderApp);
     return recorder;
   }
 
@@ -85,7 +85,7 @@ export class Recorder implements InstrumentationListener {
     }
   }
 
-  private async _install(recorderApp: IRecorderApp) {
+  async installRecorder(recorderApp: IRecorderApp) {
     this._recorderApp = recorderApp;
     recorderApp.once('close', () => {
       this._debugger.resume(false);
@@ -129,6 +129,12 @@ export class Recorder implements InstrumentationListener {
       this._pushAllSources()
     ]);
 
+    (this._context as any).recorderAppForTest = this._recorderApp;
+  }
+
+  async install(showRecorder: Boolean, recorderApp: IRecorderApp) {
+    if (showRecorder)
+      await this.installRecorder(recorderApp);
     this._context.once(BrowserContext.Events.Close, () => {
       this._contextRecorder.dispose();
       this._context.instrumentation.removeListener(this);
@@ -166,6 +172,7 @@ export class Recorder implements InstrumentationListener {
 
     await this._context.exposeBinding('__pw_recorderSetSelector', false, async ({ frame }, selector: string) => {
       const selectorChain = await generateFrameSelector(frame);
+      this._contextRecorder.emitSelector(selector);
       await this._recorderApp?.setSelector(buildFullSelector(selectorChain, selector), true);
     });
 
@@ -181,6 +188,11 @@ export class Recorder implements InstrumentationListener {
       this._overlayState = state;
     });
 
+    // added for synthetics
+    await this._context.exposeBinding('__pw_setMode', false, async (_, mode: Mode) => {
+      this.setMode(mode);
+    });
+
     await this._context.exposeBinding('__pw_resume', false, () => {
       this._debugger.resume(false);
     });
@@ -191,8 +203,6 @@ export class Recorder implements InstrumentationListener {
     if (this._debugger.isPaused())
       this._pausedStateChanged();
     this._debugger.on(Debugger.Events.PausedStateChanged, () => this._pausedStateChanged());
-
-    (this._context as any).recorderAppForTest = this._recorderApp;
   }
 
   _pausedStateChanged() {

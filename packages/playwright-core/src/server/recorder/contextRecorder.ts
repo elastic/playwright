@@ -75,7 +75,7 @@ export class ContextRecorder extends EventEmitter {
       saveStorage: params.saveStorage,
     };
 
-    const collection = new RecorderCollection(params.mode === 'recording');
+    const collection = new RecorderCollection(params.mode === 'recording', params.actionListener);
     collection.on('change', () => {
       this._recorderSources = [];
       for (const languageGenerator of this._orderedLanguages) {
@@ -157,6 +157,10 @@ export class ContextRecorder extends EventEmitter {
       clearTimeout(timer);
     this._timers.clear();
     eventsHelper.removeEventListeners(this._listeners);
+  }
+
+  emitSelector(selector: string) {
+    this._params.actionListener?.emit('selector', selector);
   }
 
   private async _onPage(page: Page) {

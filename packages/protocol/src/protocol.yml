@@ -1191,6 +1191,8 @@ BrowserContext:
         saveStorage: string?
         outputFile: string?
         omitCallTracking: boolean?
+        showRecorder: boolean?
+        actionListener: json?
 
     newCDPSession:
       parameters:

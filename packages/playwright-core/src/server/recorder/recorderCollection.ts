@@ -24,10 +24,12 @@ export class RecorderCollection extends EventEmitter {
   private _lastAction: ActionInContext | null = null;
   private _actions: ActionInContext[] = [];
   private _enabled: boolean;
+  private _actionListener: EventEmitter | undefined;
 
-  constructor(enabled: boolean) {
+  constructor(enabled: boolean, actionListener: EventEmitter | undefined) {
     super();
     this._enabled = enabled;
+    this._actionListener = actionListener;
     this.restart();
   }
 
@@ -102,6 +104,7 @@ export class RecorderCollection extends EventEmitter {
       this._actions.pop();
     this._actions.push(actionInContext);
     this.emit('change');
+    this._actionListener?.emit('actions', this._actions);
   }
 
   commitLastAction() {
@@ -130,6 +133,7 @@ export class RecorderCollection extends EventEmitter {
         signals.length = signals.length - 1;
       this._lastAction.action.signals.push(signal);
       this.emit('change');
+      this._actionListener?.emit('actions', this._actions);
       return;
     }
 
