@@ -27,7 +27,7 @@ import { Worker } from './worker';
 import { Events } from './events';
 import { TimeoutSettings } from '../common/timeoutSettings';
 import { Waiter } from './waiter';
-import type { URLMatch, Headers, WaitForEventOptions, BrowserContextOptions, StorageState, LaunchOptions } from './types';
+import type { URLMatch, Headers, WaitForEventOptions, BrowserContextOptions, StorageState } from './types';
 import { headersObjectToArray, isRegExp, isString } from '../utils';
 import { mkdirIfNeeded } from '../utils/fileUtils';
 import { isSafeCloseError } from '../common/errors';
@@ -365,16 +365,7 @@ export class BrowserContext extends ChannelOwner<channels.BrowserContextChannel>
     }
   }
 
-  async _enableRecorder(params: {
-      language: string,
-      launchOptions?: LaunchOptions,
-      contextOptions?: BrowserContextOptions,
-      device?: string,
-      saveStorage?: string,
-      mode?: 'recording' | 'inspecting',
-      outputFile?: string,
-      handleSIGINT?: boolean,
-  }) {
+  async _enableRecorder(params: channels.BrowserContextRecorderSupplementEnableParams) {
     await this._channel.recorderSupplementEnable(params);
   }
 }

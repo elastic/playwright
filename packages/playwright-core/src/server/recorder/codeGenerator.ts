@@ -33,14 +33,14 @@ export class CodeGenerator extends EventEmitter {
   private _enabled: boolean;
   private _options: LanguageGeneratorOptions;
 
-  constructor(browserName: string, enabled: boolean, launchOptions: LaunchOptions, contextOptions: BrowserContextOptions, deviceName: string | undefined, saveStorage: string | undefined) {
+  constructor(browserName: string, enabled: boolean, launchOptions: LaunchOptions, contextOptions: BrowserContextOptions, deviceName: string | undefined, saveStorage: string | undefined, actionListener: EventEmitter | undefined) {
     super();
 
     // Make a copy of options to modify them later.
     launchOptions = { headless: false, ...launchOptions };
     contextOptions = { ...contextOptions };
     this._enabled = enabled;
-    this._options = { browserName, launchOptions, contextOptions, deviceName, saveStorage };
+    this._options = { browserName, launchOptions, contextOptions, deviceName, saveStorage, actionListener };
     this.restart();
   }
 
@@ -111,6 +111,7 @@ export class CodeGenerator extends EventEmitter {
       this._actions.pop();
     this._actions.push(actionInContext);
     this.emit('change');
+    this._options.actionListener?.emit('actions', this._actions);
   }
 
   commitLastAction() {
@@ -138,6 +139,7 @@ export class CodeGenerator extends EventEmitter {
         signals.length = signals.length - 1;
       this._lastAction.action.signals.push(signal);
       this.emit('change');
+      this._options.actionListener?.emit('actions', this._actions);
       return;
     }
 

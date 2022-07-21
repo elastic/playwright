@@ -14,6 +14,7 @@
  * limitations under the License.
  */
 
+import { EventEmitter } from 'stream';
 import type { BrowserContextOptions, LaunchOptions } from '../../..';
 import type { Language } from '../isomorphic/locatorGenerators';
 import type { ActionInContext } from './codeGenerator';
@@ -26,6 +27,7 @@ export type LanguageGeneratorOptions = {
   contextOptions: BrowserContextOptions;
   deviceName?: string;
   saveStorage?: string;
+  actionListener?: EventEmitter;
 };
 
 export type LocatorType = 'default' | 'role' | 'text' | 'label' | 'placeholder' | 'alt' | 'title' | 'test-id' | 'nth' | 'first' | 'last' | 'has-text';
