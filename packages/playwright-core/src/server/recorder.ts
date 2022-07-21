@@ -58,6 +58,7 @@ export class Recorder implements InstrumentationListener {
   private _debugger: Debugger;
   private _contextRecorder: ContextRecorder;
   private _handleSIGINT: boolean | undefined;
+  private _recorderAppFactory: (recorder: Recorder) => Promise<IRecorderApp>;
   private _omitCallTracking = false;
   private _currentLanguage: Language;
 
@@ -71,19 +72,20 @@ export class Recorder implements InstrumentationListener {
     Recorder.show(context, {}).catch(() => {});
   }
 
-  static show(context: BrowserContext, params: channels.BrowserContextRecorderSupplementEnableParams = {}): Promise<Recorder> {
+  static show(context: BrowserContext, params: channels.BrowserContextRecorderSupplementEnableParams = {}, recorderAppFactory = Recorder.defaultRecorderAppFactory): Promise<Recorder> {
     let recorderPromise = (context as any)[recorderSymbol] as Promise<Recorder>;
     if (!recorderPromise) {
-      const recorder = new Recorder(context, params);
-      recorderPromise = recorder.install().then(() => recorder);
+      const recorder = new Recorder(context, params, recorderAppFactory);
+      recorderPromise = recorder.install(Boolean(params.showRecorder)).then(() => recorder);
       (context as any)[recorderSymbol] = recorderPromise;
     }
     return recorderPromise;
   }
 
-  constructor(context: BrowserContext, params: channels.BrowserContextRecorderSupplementEnableParams) {
+  constructor(context: BrowserContext, params: channels.BrowserContextRecorderSupplementEnableParams, recorderAppFactory = Recorder.defaultRecorderAppFactory) {
     this._mode = params.mode || 'none';
     this._contextRecorder = new ContextRecorder(context, params);
+    this._recorderAppFactory = recorderAppFactory;
     this._context = context;
     this._omitCallTracking = !!params.omitCallTracking;
     this._debugger = context.debugger();
@@ -92,14 +94,15 @@ export class Recorder implements InstrumentationListener {
     this._currentLanguage = this._contextRecorder.languageName();
   }
 
+
   private static async defaultRecorderAppFactory(recorder: Recorder) {
     if (process.env.PW_CODEGEN_NO_INSPECTOR)
       return new EmptyRecorderApp();
     return await RecorderApp.open(recorder, recorder._context, recorder._handleSIGINT);
   }
 
-  async install() {
-    const recorderApp = await (Recorder.recorderAppFactory || Recorder.defaultRecorderAppFactory)(this);
+  async installRecorder() {
+    const recorderApp = await this._recorderAppFactory(this);
     this._recorderApp = recorderApp;
     recorderApp.once('close', () => {
       this._debugger.resume(false);
@@ -143,10 +146,16 @@ export class Recorder implements InstrumentationListener {
       this._pushAllSources()
     ]);
 
+    (this._context as any).recorderAppForTest = this._recorderApp;
+  }
+
+  async install(showRecorder: Boolean) {
+    if (showRecorder)
+      await this.installRecorder();
     this._context.once(BrowserContext.Events.Close, () => {
       this._contextRecorder.dispose();
       this._context.instrumentation.removeListener(this);
-      recorderApp.close().catch(() => {});
+      this._recorderApp?.close().catch(() => {});
     });
     this._contextRecorder.on(ContextRecorder.Events.Change, (data: { sources: Source[], primaryFileName: string }) => {
       this._recorderSources = data.sources;
@@ -178,7 +187,13 @@ export class Recorder implements InstrumentationListener {
     });
 
     await this._context.exposeBinding('__pw_recorderSetSelector', false, async (_, selector: string) => {
+      this.setMode('none');
+      this._contextRecorder.emitSelector(selector);
       await this._recorderApp?.setSelector(selector, true);
+    });
+    // added for synthetics
+    await this._context.exposeBinding('__pw_setMode', false, async  (_, mode: Mode) => {
+      this.setMode(mode);
     });
 
     await this._context.exposeBinding('__pw_resume', false, () => {
@@ -191,8 +206,6 @@ export class Recorder implements InstrumentationListener {
     if (this._debugger.isPaused())
       this._pausedStateChanged();
     this._debugger.on(Debugger.Events.PausedStateChanged, () => this._pausedStateChanged());
-
-    (this._context as any).recorderAppForTest = recorderApp;
   }
 
   _pausedStateChanged() {
@@ -357,7 +370,7 @@ class ContextRecorder extends EventEmitter {
     this._recorderSources = [];
     const language = params.language || context._browser.options.sdkLanguage;
     this.setOutput(language, params.outputFile);
-    const generator = new CodeGenerator(context._browser.options.name, params.mode === 'recording', params.launchOptions || {}, params.contextOptions || {}, params.device, params.saveStorage);
+    const generator = new CodeGenerator(context._browser.options.name, params.mode === 'recording', params.launchOptions || {}, params.contextOptions || {}, params.device, params.saveStorage, params.actionListener);
     generator.on('change', () => {
       this._recorderSources = [];
       for (const languageGenerator of this._orderedLanguages) {
@@ -447,6 +460,10 @@ class ContextRecorder extends EventEmitter {
     for (const timer of this._timers)
       clearTimeout(timer);
     this._timers.clear();
+  }
+
+  emitSelector(selector: string) {
+    this._params.actionListener?.emit('selector', selector);
   }
 
   private async _onPage(page: Page) {
