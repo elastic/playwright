@@ -73,9 +73,10 @@ export class ContextRecorder extends EventEmitter {
       contextOptions: { ...params.contextOptions },
       deviceName: params.device,
       saveStorage: params.saveStorage,
+      actionListener: params.actionListener,
     };
 
-    this._collection = new RecorderCollection(this._pageAliases);
+    this._collection = new RecorderCollection(this._pageAliases, languageGeneratorOptions);
     this._collection.on('change', (actions: actions.ActionInContext[]) => {
       this._recorderSources = [];
       for (const languageGenerator of this._orderedLanguages) {
@@ -158,6 +159,10 @@ export class ContextRecorder extends EventEmitter {
 
   dispose() {
     eventsHelper.removeEventListeners(this._listeners);
+  }
+
+  emitSelector(selector: string) {
+    this._params.actionListener?.emit('selector', selector);
   }
 
   private async _onPage(page: Page) {

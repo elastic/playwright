@@ -74,7 +74,7 @@ export class Recorder implements InstrumentationListener, IRecorder {
   private static async _create(context: BrowserContext, recorderAppFactory: IRecorderAppFactory, params: channels.BrowserContextEnableRecorderParams = {}): Promise<Recorder> {
     const recorder = new Recorder(context, params);
     const recorderApp = await recorderAppFactory(recorder);
-    await recorder._install(recorderApp);
+    await recorder._install(recorderApp, Boolean(params.showRecorder));
     return recorder;
   }
 
@@ -94,7 +94,7 @@ export class Recorder implements InstrumentationListener, IRecorder {
     }
   }
 
-  private async _install(recorderApp: IRecorderApp) {
+  private async installRecorder(recorderApp: IRecorderApp) {
     this._recorderApp = recorderApp;
     recorderApp.once('close', () => {
       this._debugger.resume(false);
@@ -145,6 +145,13 @@ export class Recorder implements InstrumentationListener, IRecorder {
       this._pushAllSources()
     ]);
 
+    (this._context as any).recorderAppForTest = this._recorderApp;
+  }
+
+  async _install(recorderApp: IRecorderApp, showRecorder: Boolean) {
+    if (showRecorder)
+      await this.installRecorder(recorderApp);
+
     this._context.once(BrowserContext.Events.Close, () => {
       this._contextRecorder.dispose();
       this._context.instrumentation.removeListener(this);
@@ -185,7 +192,9 @@ export class Recorder implements InstrumentationListener, IRecorder {
 
     await this._context.exposeBinding('__pw_recorderElementPicked', false, async ({ frame }, elementInfo: ElementInfo) => {
       const selectorChain = await generateFrameSelector(frame);
-      await this._recorderApp?.elementPicked({ selector: buildFullSelector(selectorChain, elementInfo.selector), ariaSnapshot: elementInfo.ariaSnapshot }, true);
+      const selector = buildFullSelector(selectorChain, elementInfo.selector);
+      await this._recorderApp?.elementPicked({ selector, ariaSnapshot: elementInfo.ariaSnapshot }, true);
+      this._contextRecorder.emitSelector(selector);
     });
 
     await this._context.exposeBinding('__pw_recorderSetMode', false, async ({ frame }, mode: Mode) => {
@@ -200,6 +209,11 @@ export class Recorder implements InstrumentationListener, IRecorder {
       this._overlayState = state;
     });
 
+    // added for synthetics
+    await this._context.exposeBinding('__pw_setMode', false, async  (_, mode: Mode) => {
+      this.setMode(mode);
+    });
+
     await this._context.exposeBinding('__pw_resume', false, () => {
       this._debugger.resume(false);
     });
@@ -208,8 +222,6 @@ export class Recorder implements InstrumentationListener, IRecorder {
     if (this._debugger.isPaused())
       this._pausedStateChanged();
     this._debugger.on(Debugger.Events.PausedStateChanged, () => this._pausedStateChanged());
-
-    (this._context as any).recorderAppForTest = this._recorderApp;
   }
 
   _pausedStateChanged() {

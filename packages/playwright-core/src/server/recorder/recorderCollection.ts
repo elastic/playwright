@@ -20,6 +20,7 @@ import { performAction } from './recorderRunner';
 import { collapseActions } from './recorderUtils';
 import { isUnderTest } from '../utils/debug';
 import { monotonicTime } from '../../utils/isomorphic/time';
+import { LanguageGeneratorOptions } from '../codegen/types';
 
 import type { Signal } from '../../../../recorder/src/actions';
 import type { Frame } from '../frames';
@@ -30,10 +31,12 @@ export class RecorderCollection extends EventEmitter {
   private _actions: actions.ActionInContext[] = [];
   private _enabled = false;
   private _pageAliases: Map<Page, string>;
+  private _options: LanguageGeneratorOptions;
 
-  constructor(pageAliases: Map<Page, string>) {
+  constructor(pageAliases: Map<Page, string>, options: LanguageGeneratorOptions) {
     super();
     this._pageAliases = pageAliases;
+    this._options = options;
   }
 
   restart() {
@@ -122,5 +125,6 @@ export class RecorderCollection extends EventEmitter {
       return;
 
     this.emit('change', collapseActions(this._actions));
+    this._options.actionListener?.emit('actions', this._actions);
   }
 }

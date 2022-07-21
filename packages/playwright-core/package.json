@@ -31,6 +31,8 @@
     "./lib/server/utils/image_tools/imageChannel": "./lib/server/utils/image_tools/imageChannel.js",
     "./lib/server/utils/image_tools/colorUtils": "./lib/server/utils/image_tools/colorUtils.js",
     "./lib/server/registry/index": "./lib/server/registry/index.js",
+    "./lib/server/recorder/javascript": "./lib/server/recorder/javascript.js",
+    "./lib/server/codegen/javascript": "./lib/server/codegen/javascript.js",
     "./lib/utils": "./lib/utils.js",
     "./lib/utilsBundle": "./lib/utilsBundle.js",
     "./lib/zipBundle": "./lib/zipBundle.js",
