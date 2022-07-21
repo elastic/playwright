@@ -920,6 +920,8 @@ scheme.BrowserContextRecorderSupplementEnableParams = tObject({
   outputFile: tOptional(tString),
   handleSIGINT: tOptional(tBoolean),
   omitCallTracking: tOptional(tBoolean),
+  showRecorder: tOptional(tBoolean),
+  actionListener: tOptional(tAny),
 });
 scheme.BrowserContextRecorderSupplementEnableResult = tOptional(tObject({}));
 scheme.BrowserContextNewCDPSessionParams = tObject({
