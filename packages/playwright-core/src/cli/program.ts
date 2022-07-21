@@ -561,6 +561,7 @@ async function codegen(options: Options & { target: string, output?: string, tes
     saveStorage: options.saveStorage,
     mode: 'recording',
     testIdAttributeName,
+    showRecorder: true,
     outputFile: outputFile ? path.resolve(outputFile) : undefined,
     handleSIGINT: false,
   });

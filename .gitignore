@@ -11,6 +11,7 @@ node_modules/
 yarn.lock
 /packages/playwright-core/src/generated/*
 packages/*/lib/
+# !packages/playwright-core/lib/
 drivers/
 .android-sdk/
 .gradle/
