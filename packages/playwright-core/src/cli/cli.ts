@@ -596,8 +596,9 @@ async function codegen(options: Options, url: string | undefined, language: stri
     device: options.device,
     saveStorage: options.saveStorage,
     mode: 'recording',
-    outputFile: outputFile ? path.resolve(outputFile) : undefined,
     handleSIGINT: false,
+    showRecorder: true,
+    outputFile: outputFile ? path.resolve(outputFile) : undefined
   });
   await openPage(context, url);
   if (process.env.PWTEST_CLI_EXIT)
