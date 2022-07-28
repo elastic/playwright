@@ -28,6 +28,7 @@
     "./lib/utils/multimap": "./lib/utils/multimap.js",
     "./lib/utils/processLauncher": "./lib/utils/processLauncher.js",
     "./lib/utils/registry": "./lib/utils/registry.js",
+    "./lib/utils/browserFetcher": "./lib/utils/browserFetcher.js",
     "./lib/utils/utils": "./lib/utils/utils.js",
     "./lib/utils/stackTrace": "./lib/utils/stackTrace.js",
     "./lib/remote/playwrightServer": "./lib/remote/playwrightServer.js",
