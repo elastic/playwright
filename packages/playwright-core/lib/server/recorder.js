@@ -51,7 +51,7 @@ class Recorder {
   static showInspector(context) {
     Recorder.show(context, {}).catch(() => {});
   }
-  static show(context, params = {}) {
+  static show(context, params = {}, recorderAppFactory = Recorder.defaultRecorderAppFactory) {
     let recorderPromise = context[recorderSymbol];
     if (!recorderPromise) {
       const recorder = new Recorder(context, params, recorderAppFactory);
