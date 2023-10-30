@@ -29,6 +29,8 @@
       "default": "./jsx-runtime.js"
     },
     "./lib/util": "./lib/util.js",
+    "./lib/server/recorder/javascript": "./lib/server/recorder/javascript.js",
+    "./lib/server/registry/browserFetcher": "./lib/server/registry/browserFetcher.js",
     "./lib/utilsBundle": "./lib/utilsBundle.js",
     "./types/test": {
       "types": "./types/test.d.ts"
