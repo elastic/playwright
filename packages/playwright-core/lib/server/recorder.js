@@ -51,7 +51,7 @@ class Recorder {
   static showInspector(context) {
     Recorder.show(context, {}).catch(() => {});
   }
-  static show(context, params = {}) {
+  static show(context, params = {}, recorderAppFactory = Recorder.defaultRecorderAppFactory) {
     let recorderPromise = context[recorderSymbol];
     if (!recorderPromise) {
       const recorder = new Recorder(context, params, recorderAppFactory);
@@ -60,7 +60,7 @@ class Recorder {
     }
     return recorderPromise;
   }
-  constructor(context, params) {
+  constructor(context, params, recorderAppFactory) {
     this._context = void 0;
     this._mode = void 0;
     this._highlightedSelector = '';
@@ -71,9 +71,11 @@ class Recorder {
     this._debugger = void 0;
     this._contextRecorder = void 0;
     this._handleSIGINT = void 0;
+    this._recorderAppFactory = void 0;
     this._omitCallTracking = false;
     this._currentLanguage = void 0;
     this._mode = params.mode || 'none';
+    this._recorderAppFactory = recorderAppFactory;
     this._contextRecorder = new ContextRecorder(context, params);
     this._context = context;
     this._omitCallTracking = !!params.omitCallTracking;
