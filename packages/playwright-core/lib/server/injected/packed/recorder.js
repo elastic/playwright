@@ -53,6 +53,8 @@ function normalizeEscapedRegexQuotes(source) {
   return source.replace(/(^|[^\\])(\\\\)*\\(['"`])/g, "$1$2$3");
 }
 function escapeRegexForSelector(re) {
+  if (re.unicode || re.unicodeSets)
+    return String(re);
   return String(re).replace(/(^|[^\\])(\\\\)*(["'`])/g, "$1$2\\$3").replace(/>>/g, "\\>\\>");
 }
 function escapeForTextSelector(text, exact) {

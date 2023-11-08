@@ -84,8 +84,6 @@ _validatorPrimitives.scheme.SerializedValue = (0, _validatorPrimitives.tObject)(
   d: (0, _validatorPrimitives.tOptional)(_validatorPrimitives.tString),
   u: (0, _validatorPrimitives.tOptional)(_validatorPrimitives.tString),
   bi: (0, _validatorPrimitives.tOptional)(_validatorPrimitives.tString),
-  m: (0, _validatorPrimitives.tOptional)((0, _validatorPrimitives.tType)('SerializedValue')),
-  se: (0, _validatorPrimitives.tOptional)((0, _validatorPrimitives.tType)('SerializedValue')),
   r: (0, _validatorPrimitives.tOptional)((0, _validatorPrimitives.tObject)({
     p: _validatorPrimitives.tString,
     f: _validatorPrimitives.tString

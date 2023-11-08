@@ -10,12 +10,6 @@ module.exports = __toCommonJS(utilityScript_exports);
 
 // packages/playwright-core/src/server/isomorphic/utilityScriptSerializers.ts
 function source() {
-  function isMap(obj) {
-    return obj instanceof Map || Object.prototype.toString.call(obj) === "[object Map]";
-  }
-  function isSet(obj) {
-    return obj instanceof Set || Object.prototype.toString.call(obj) === "[object Set]";
-  }
   function isRegExp(obj) {
     try {
       return obj instanceof RegExp || Object.prototype.toString.call(obj) === "[object RegExp]";
@@ -72,10 +66,6 @@ function source() {
         return new URL(value.u);
       if ("bi" in value)
         return BigInt(value.bi);
-      if ("m" in value)
-        return new Map(parseEvaluationResultValue2(value.m));
-      if ("se" in value)
-        return new Set(parseEvaluationResultValue2(value.se));
       if ("r" in value)
         return new RegExp(value.r.p, value.r.f);
       if ("a" in value) {
@@ -140,10 +130,6 @@ function source() {
       return value;
     if (typeof value === "bigint")
       return { bi: value.toString() };
-    if (isMap(value))
-      return { m: serialize(Array.from(value), handleSerializer, visitorInfo) };
-    if (isSet(value))
-      return { se: serialize(Array.from(value), handleSerializer, visitorInfo) };
     if (isError(value)) {
       const error = value;
       if ((_a = error.stack) == null ? void 0 : _a.startsWith(error.name + ": " + error.message)) {

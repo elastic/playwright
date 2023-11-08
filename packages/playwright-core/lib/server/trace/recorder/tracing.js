@@ -37,7 +37,7 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { de
  * limitations under the License.
  */
 
-const version = 4;
+const version = 5;
 const kScreencastOptions = {
   width: 800,
   height: 600,
@@ -314,7 +314,7 @@ class Tracing extends _instrumentation.SdkObject {
   }
   onEvent(sdkObject, event) {
     if (!sdkObject.attribution.context) return;
-    if (event.method === 'console' || event.method === '__create__' && event.class === 'ConsoleMessage') {
+    if (event.method === 'console' || event.method === '__create__' && event.class === 'ConsoleMessage' || event.method === '__create__' && event.class === 'JSHandle') {
       // Console messages are handled separately.
       return;
     }
@@ -360,30 +360,15 @@ class Tracing extends _instrumentation.SdkObject {
     });
   }
   _onConsoleMessage(message) {
-    const object = {
-      type: 'object',
-      class: 'ConsoleMessage',
-      guid: message.guid,
-      initializer: {
-        type: message.type(),
-        text: message.text(),
-        args: message.args().map(a => ({
-          preview: a.toString(),
-          value: a.rawValue()
-        })),
-        location: message.location()
-      }
-    };
-    this._appendTraceEvent(object);
     const event = {
-      type: 'event',
-      class: 'BrowserContext',
-      method: 'console',
-      params: {
-        message: {
-          guid: message.guid
-        }
-      },
+      type: 'console',
+      messageType: message.type(),
+      text: message.text(),
+      args: message.args().map(a => ({
+        preview: a.toString(),
+        value: a.rawValue()
+      })),
+      location: message.location(),
       time: (0, _utils.monotonicTime)(),
       pageId: message.page().guid
     };
@@ -411,7 +396,7 @@ class Tracing extends _instrumentation.SdkObject {
   _appendTraceEvent(event) {
     const visited = visitTraceEvent(event, this._state.traceSha1s);
     // Do not flush (console) events, they are too noisy, unless we are in ui mode (live).
-    const flush = this._state.options.live || event.type !== 'event' && event.type !== 'object';
+    const flush = this._state.options.live || event.type !== 'event' && event.type !== 'console';
     this._fs.appendFile(this._state.traceFile, JSON.stringify(visited) + '\n', flush);
   }
   _appendResource(sha1, buffer) {

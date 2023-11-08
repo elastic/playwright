@@ -107,4 +107,7 @@ class ListModeReporter extends _empty.default {
     // eslint-disable-next-line no-console
     console.error('\n' + (0, _base.formatError)(error, false).message);
   }
+  printsToStdio() {
+    return true;
+  }
 }
