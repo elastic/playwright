@@ -63,6 +63,7 @@ export class Recorder implements InstrumentationListener {
   private _debugger: Debugger;
   private _contextRecorder: ContextRecorder;
   private _handleSIGINT: boolean | undefined;
+  private _recorderAppFactory: (recorder: Recorder) => Promise<IRecorderApp>;
   private _omitCallTracking = false;
   private _currentLanguage: Language;
 
@@ -79,7 +80,7 @@ export class Recorder implements InstrumentationListener {
     Recorder.show(context, params).catch(() => {});
   }
 
-  static show(context: BrowserContext, params: channels.BrowserContextRecorderSupplementEnableParams = {}): Promise<Recorder> {
+  static show(context: BrowserContext, params: channels.BrowserContextRecorderSupplementEnableParams = {}, recorderAppFactory = Recorder.defaultRecorderAppFactory): Promise<Recorder> {
     let recorderPromise = (context as any)[recorderSymbol] as Promise<Recorder>;
     if (!recorderPromise) {
       const recorder = new Recorder(context, params, recorderAppFactory);
@@ -89,8 +90,9 @@ export class Recorder implements InstrumentationListener {
     return recorderPromise;
   }
 
-  constructor(context: BrowserContext, params: channels.BrowserContextRecorderSupplementEnableParams) {
+  constructor(context: BrowserContext, params: channels.BrowserContextRecorderSupplementEnableParams, recorderAppFactory: (recorder: Recorder) => Promise<IRecorderApp>) {
     this._mode = params.mode || 'none';
+    this._recorderAppFactory = recorderAppFactory;
     this._contextRecorder = new ContextRecorder(context, params);
     this._context = context;
     this._omitCallTracking = !!params.omitCallTracking;
