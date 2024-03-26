@@ -12,7 +12,8 @@ yarn.lock
 /packages/playwright-core/src/generated
 /packages/playwright-ct-core/src/generated
 packages/*/lib/
-# !packages/playwright-core/lib/
+!packages/playwright/lib/
+!packages/playwright-core/lib/
 drivers/
 .android-sdk/
 .gradle/
