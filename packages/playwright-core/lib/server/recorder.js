@@ -159,8 +159,9 @@ class Recorder {
       frame
     }, selector) => {
       var _this$_recorderApp3;
-      const selectorChain = await (0, _contextRecorder.generateFrameSelector)(frame);
+      this.setMode('none');
       this._contextRecorder.emitSelector(selector);
+      const selectorChain = await (0, _contextRecorder.generateFrameSelector)(frame);
       await ((_this$_recorderApp3 = this._recorderApp) === null || _this$_recorderApp3 === void 0 ? void 0 : _this$_recorderApp3.setSelector((0, _recorderUtils.buildFullSelector)(selectorChain, selector), true));
     });
     await this._context.exposeBinding('__pw_recorderSetMode', false, async ({
