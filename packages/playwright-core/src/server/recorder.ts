@@ -171,8 +171,9 @@ export class Recorder implements InstrumentationListener {
     });
 
     await this._context.exposeBinding('__pw_recorderSetSelector', false, async ({ frame }, selector: string) => {
-      const selectorChain = await generateFrameSelector(frame);
+      this.setMode('none');
       this._contextRecorder.emitSelector(selector);
+      const selectorChain = await generateFrameSelector(frame);
       await this._recorderApp?.setSelector(buildFullSelector(selectorChain, selector), true);
     });
 
