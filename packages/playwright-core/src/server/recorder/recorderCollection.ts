@@ -31,7 +31,7 @@ export class RecorderCollection extends EventEmitter {
   private _enabled = false;
   private _pageAliases: Map<Page, string>;
 
-  constructor(pageAliases: Map<Page, string>) {
+  constructor(pageAliases: Map<Page, string>, private readonly _actionListener?: EventEmitter) {
     super();
     this._pageAliases = pageAliases;
   }
@@ -121,6 +121,7 @@ export class RecorderCollection extends EventEmitter {
     if (this._actions.length) {
       this._actions[this._actions.length - 1].action.signals.push(signal);
       this._fireChange();
+      this._actionListener?.emit('action', this._actions);
       return;
     }
   }
@@ -129,5 +130,6 @@ export class RecorderCollection extends EventEmitter {
     if (!this._enabled)
       return;
     this.emit('change', collapseActions(this._actions));
+    this._actionListener?.emit('action', this._actions);
   }
 }
