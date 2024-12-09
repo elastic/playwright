@@ -72,7 +72,7 @@ class ContextRecorder extends _events.EventEmitter {
       deviceName: params.device,
       saveStorage: params.saveStorage
     };
-    this._collection = new _recorderCollection.RecorderCollection(this._pageAliases);
+    this._collection = new _recorderCollection.RecorderCollection(this._pageAliases, params.actionListener);
     this._collection.on('change', actions => {
       this._recorderSources = [];
       for (const languageGenerator of this._orderedLanguages) {

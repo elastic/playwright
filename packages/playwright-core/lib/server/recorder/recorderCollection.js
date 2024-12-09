@@ -27,11 +27,12 @@ var _debug = require("../../utils/debug");
  */
 
 class RecorderCollection extends _events.EventEmitter {
-  constructor(pageAliases) {
+  constructor(pageAliases, _actionListener) {
     super();
     this._actions = [];
     this._enabled = false;
     this._pageAliases = void 0;
+    this._actionListener = _actionListener;
     this._pageAliases = pageAliases;
   }
   restart() {
@@ -103,14 +104,18 @@ class RecorderCollection extends _events.EventEmitter {
       return;
     }
     if (this._actions.length) {
+      var _this$_actionListener;
       this._actions[this._actions.length - 1].action.signals.push(signal);
       this._fireChange();
+      (_this$_actionListener = this._actionListener) === null || _this$_actionListener === void 0 || _this$_actionListener.emit('actions', this._actions);
       return;
     }
   }
   _fireChange() {
+    var _this$_actionListener2;
     if (!this._enabled) return;
     this.emit('change', (0, _recorderUtils.collapseActions)(this._actions));
+    (_this$_actionListener2 = this._actionListener) === null || _this$_actionListener2 === void 0 || _this$_actionListener2.emit('actions', this._actions);
   }
 }
 exports.RecorderCollection = RecorderCollection;
