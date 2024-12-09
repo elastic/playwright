@@ -121,7 +121,7 @@ export class RecorderCollection extends EventEmitter {
     if (this._actions.length) {
       this._actions[this._actions.length - 1].action.signals.push(signal);
       this._fireChange();
-      this._actionListener?.emit('action', this._actions);
+      this._actionListener?.emit('actions', this._actions);
       return;
     }
   }
@@ -130,6 +130,6 @@ export class RecorderCollection extends EventEmitter {
     if (!this._enabled)
       return;
     this.emit('change', collapseActions(this._actions));
-    this._actionListener?.emit('action', this._actions);
+    this._actionListener?.emit('actions', this._actions);
   }
 }
