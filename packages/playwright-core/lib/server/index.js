@@ -39,6 +39,12 @@ Object.defineProperty(exports, "createPlaywright", {
     return _playwright.createPlaywright;
   }
 });
+Object.defineProperty(exports, "downloadBrowserWithProgressBar", {
+  enumerable: true,
+  get: function () {
+    return _browserFetcher.downloadBrowserWithProgressBar;
+  }
+});
 Object.defineProperty(exports, "installBrowsersForNpmInstall", {
   enumerable: true,
   get: function () {
@@ -112,3 +118,4 @@ var _playwright = require("./playwright");
 var _traceViewer = require("./trace/viewer/traceViewer");
 var _instrumentation = require("./instrumentation");
 var _socksProxy = require("../common/socksProxy");
+var _browserFetcher = require("./registry/browserFetcher");
