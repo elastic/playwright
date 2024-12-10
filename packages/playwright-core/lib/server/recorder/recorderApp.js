@@ -4,15 +4,11 @@ Object.defineProperty(exports, "__esModule", {
   value: true
 });
 exports.RecorderApp = exports.EmptyRecorderApp = void 0;
-var _fs = _interopRequireDefault(require("fs"));
-var _path = _interopRequireDefault(require("path"));
 var _progress = require("../progress");
 var _events = require("events");
 var _instrumentation = require("../instrumentation");
 var _utils = require("../../utils");
-var _utilsBundle = require("../../utilsBundle");
 var _launchApp = require("../launchApp");
-function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 /**
  * Copyright (c) Microsoft Corporation.
  *
@@ -64,19 +60,19 @@ class RecorderApp extends _events.EventEmitter {
     await (0, _launchApp.syncLocalStorageWithSettings)(this._page, 'recorder');
     await this._page._setServerRequestInterceptor(route => {
       if (!route.request().url().startsWith('https://playwright/')) return false;
-      const uri = route.request().url().substring('https://playwright/'.length);
-      const file = require.resolve('../../vite/recorder/' + uri);
-      _fs.default.promises.readFile(file).then(buffer => {
-        route.fulfill({
-          status: 200,
-          headers: [{
-            name: 'Content-Type',
-            value: _utilsBundle.mime.getType(_path.default.extname(file)) || 'application/octet-stream'
-          }],
-          body: buffer.toString('base64'),
-          isBase64: true
-        }).catch(() => {});
-      });
+
+      // const uri = route.request().url().substring('https://playwright/'.length);
+      // const file = require.resolve('../../vite/recorder/' + uri);
+      // fs.promises.readFile(file).then(buffer => {
+      //   route.fulfill({
+      //     status: 200,
+      //     headers: [
+      //       { name: 'Content-Type', value: mime.getType(path.extname(file)) || 'application/octet-stream' }
+      //     ],
+      //     body: buffer.toString('base64'),
+      //     isBase64: true
+      //   }).catch(() => {});
+      // });
       return true;
     });
     await this._page.exposeBinding('dispatch', false, (_, data) => this.emit('event', data));

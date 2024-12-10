@@ -65,18 +65,18 @@ export class RecorderApp extends EventEmitter implements IRecorderApp {
       if (!route.request().url().startsWith('https://playwright/'))
         return false;
 
-      const uri = route.request().url().substring('https://playwright/'.length);
-      const file = require.resolve('../../vite/recorder/' + uri);
-      fs.promises.readFile(file).then(buffer => {
-        route.fulfill({
-          status: 200,
-          headers: [
-            { name: 'Content-Type', value: mime.getType(path.extname(file)) || 'application/octet-stream' }
-          ],
-          body: buffer.toString('base64'),
-          isBase64: true
-        }).catch(() => {});
-      });
+      // const uri = route.request().url().substring('https://playwright/'.length);
+      // const file = require.resolve('../../vite/recorder/' + uri);
+      // fs.promises.readFile(file).then(buffer => {
+      //   route.fulfill({
+      //     status: 200,
+      //     headers: [
+      //       { name: 'Content-Type', value: mime.getType(path.extname(file)) || 'application/octet-stream' }
+      //     ],
+      //     body: buffer.toString('base64'),
+      //     isBase64: true
+      //   }).catch(() => {});
+      // });
       return true;
     });
 
