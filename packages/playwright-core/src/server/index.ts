@@ -32,3 +32,4 @@ export type { Playwright } from './playwright';
 export { openTraceInBrowser, openTraceViewerApp, runTraceViewerApp, startTraceViewerServer, installRootRedirect } from './trace/viewer/traceViewer';
 export { serverSideCallMetadata } from './instrumentation';
 export { SocksProxy } from '../common/socksProxy';
+export { downloadBrowserWithProgressBar } from './registry/browserFetcher';
