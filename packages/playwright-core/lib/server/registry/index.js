@@ -6,9 +6,21 @@ Object.defineProperty(exports, "__esModule", {
 exports.Registry = void 0;
 exports.browserDirectoryToMarkerFilePath = browserDirectoryToMarkerFilePath;
 exports.buildPlaywrightCLICommand = buildPlaywrightCLICommand;
+Object.defineProperty(exports, "downloadBrowserWithProgressBar", {
+  enumerable: true,
+  get: function () {
+    return _browserFetcher.downloadBrowserWithProgressBar;
+  }
+});
 exports.findChromiumChannel = findChromiumChannel;
 exports.installBrowsersForNpmInstall = installBrowsersForNpmInstall;
 exports.installDefaultBrowsersForNpmInstall = installDefaultBrowsersForNpmInstall;
+Object.defineProperty(exports, "logPolitely", {
+  enumerable: true,
+  get: function () {
+    return _browserFetcher.logPolitely;
+  }
+});
 exports.registryDirectory = exports.registry = void 0;
 Object.defineProperty(exports, "writeDockerVersion", {
   enumerable: true,
@@ -825,7 +837,7 @@ class Registry {
   async _downloadExecutable(descriptor, executablePath) {
     const downloadURLs = this._downloadURLs(descriptor);
     if (!downloadURLs.length) throw new Error(`ERROR: Playwright does not support ${descriptor.name} on ${_hostPlatform.hostPlatform}`);
-    if (!_hostPlatform.isOfficiallySupportedPlatform) (0, _browserFetcher.logPolitely)(`BEWARE: your OS is not officially supported by Playwright; downloading fallback build for ${_hostPlatform.hostPlatform}.`);
+    if (!_hostPlatform.isOfficiallySupportedPlatform) logPolitely(`BEWARE: your OS is not officially supported by Playwright; downloading fallback build for ${_hostPlatform.hostPlatform}.`);
     const displayName = descriptor.name.split('-').map(word => {
       return word === 'ffmpeg' ? 'FFMPEG' : word.charAt(0).toUpperCase() + word.slice(1);
     }).join(' ');
@@ -833,7 +845,7 @@ class Registry {
     const downloadFileName = `playwright-download-${descriptor.name}-${_hostPlatform.hostPlatform}-${descriptor.revision}.zip`;
     const downloadConnectionTimeoutEnv = (0, _utils.getFromENV)('PLAYWRIGHT_DOWNLOAD_CONNECTION_TIMEOUT');
     const downloadConnectionTimeout = +(downloadConnectionTimeoutEnv || '0') || 30_000;
-    await (0, _browserFetcher.downloadBrowserWithProgressBar)(title, descriptor.dir, executablePath, downloadURLs, downloadFileName, downloadConnectionTimeout).catch(e => {
+    await downloadBrowserWithProgressBar(title, descriptor.dir, executablePath, downloadURLs, downloadFileName, downloadConnectionTimeout).catch(e => {
       throw new Error(`Failed to download ${title}, caused by\n${e.stack}`);
     });
   }
@@ -935,7 +947,7 @@ class Registry {
       downloadedBrowsers = downloadedBrowsers.filter(file => isBrowserDirectory(file));
       const directories = new Set(downloadedBrowsers);
       for (const browserDirectory of usedBrowserPaths) directories.delete(browserDirectory);
-      for (const directory of directories) (0, _browserFetcher.logPolitely)('Removing unused browser at ' + directory);
+      for (const directory of directories) logPolitely('Removing unused browser at ' + directory);
       await (0, _fileUtils.removeFolders)([...directories]);
     }
   }
@@ -966,7 +978,7 @@ async function installDefaultBrowsersForNpmInstall() {
 async function installBrowsersForNpmInstall(browsers) {
   // PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD should have a value of 0 or 1
   if ((0, _utils.getAsBooleanFromENV)('PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD')) {
-    (0, _browserFetcher.logPolitely)('Skipping browsers download because `PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD` env variable is set');
+    logPolitely('Skipping browsers download because `PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD` env variable is set');
     return false;
   }
   const executables = [];

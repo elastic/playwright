@@ -29,7 +29,7 @@ import { spawnAsync } from '../../utils/spawnAsync';
 import type { DependencyGroup } from './dependencies';
 import { transformCommandsForRoot, dockerVersion, readDockerVersionSync } from './dependencies';
 import { installDependenciesLinux, installDependenciesWindows, validateDependenciesLinux, validateDependenciesWindows } from './dependencies';
-import { downloadBrowserWithProgressBar, logPolitely } from './browserFetcher';
+export { downloadBrowserWithProgressBar, logPolitely } from './browserFetcher';
 export { writeDockerVersion } from './dependencies';
 import { debugLogger } from '../../utils/debugLogger';
 
