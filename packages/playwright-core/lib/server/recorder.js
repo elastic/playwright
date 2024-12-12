@@ -191,6 +191,7 @@ class Recorder {
     await this._contextRecorder.install();
     if (this._debugger.isPaused()) this._pausedStateChanged();
     this._debugger.on(_debugger.Debugger.Events.PausedStateChanged, () => this._pausedStateChanged());
+    this._context.recorderAppForTest = this._recorderApp;
   }
   _pausedStateChanged() {
     var _this$_recorderApp3;

@@ -210,6 +210,7 @@ export class Recorder implements InstrumentationListener, IRecorder {
     if (this._debugger.isPaused())
       this._pausedStateChanged();
     this._debugger.on(Debugger.Events.PausedStateChanged, () => this._pausedStateChanged());
+    (this._context as any).recorderAppForTest = this._recorderApp;
   }
 
   _pausedStateChanged() {
