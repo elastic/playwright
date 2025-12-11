@@ -14,6 +14,7 @@
  * limitations under the License.
  */
 
+import type { EventEmitter } from 'stream';
 import type { BrowserContextOptions, LaunchOptions } from '../../../types/types';
 import type { Language } from '../../utils';
 import type * as actions from '@recorder/actions';
@@ -26,6 +27,7 @@ export type LanguageGeneratorOptions = {
   deviceName?: string;
   saveStorage?: string;
   generateAutoExpect?: boolean;
+  actionListener?: EventEmitter;
 };
 
 export interface LanguageGenerator {

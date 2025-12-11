@@ -21,6 +21,7 @@ export {
   registry,
   registryDirectory,
   writeDockerVersion } from './registry';
+export { downloadBrowserWithProgressBar } from './registry/browserFetcher';
 
 export { DispatcherConnection, RootDispatcher } from './dispatchers/dispatcher';
 export { PlaywrightDispatcher } from './dispatchers/playwrightDispatcher';
